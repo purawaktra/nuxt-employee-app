@@ -1,23 +1,68 @@
+import {getMSSQLPrismaClient} from "~/server/utils/db";
+import jwt from 'jsonwebtoken';
+import {toJS} from "yaml/util";
+
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig()
-  const {employeeId, password} = await readBody(event)
-  if (!employeeId || !password) {
-    throw new Error('Oh no 😢, your credential is not valid')
+  const config = useRuntimeConfig(event)
+  const body = await readBody(event)
+  const email = body.email
+  const password = body.password
+
+  if (!email) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "email is not provided"
+    })
   }
 
-  const requestBody = {
-    employeeId,
-    password
+  if (!password) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "password is not provided"
+    })
   }
 
-  const endpoint = config.public.beHost + '/public/v1/api/account/sign-login'
-  return await $fetch(endpoint, {
-    headers: {
-      'Front-End-Version': config.public.appVersion,
+  let result
+  try{
+    const connection = await getMSSQLPrismaClient();
+    result = await connection.user.findUniqueOrThrow({
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        is_active: true
+      },
+      where: {
+        email: email,
+        password: password,
+      }
+    })
+  } catch (e){
+    throw createError({
+      statusCode: 404,
+      statusMessage: "credential given is not valid"
+    })
+  }
+
+  if(!result.is_active){
+    throw createError({
+      statusCode: 404,
+      statusMessage: "account is not activated"
+    })
+  }
+
+  // create JWT token
+  const token = jwt.sign(
+    {
+      employee_id: result.id,
+      email: result.email,
     },
-    method: 'POST',
-    body: JSON.stringify(requestBody)
-  }).catch((error) => {
-    throw error
-  })
+    config.jwtSecret,
+    {
+      expiresIn: "30m",
+    },
+  );
+
+  setResponseHeaders(event, { "Access-Control-Allow-Credentials": "true", "Set-Cookie": `user_token=${token}; path=/; HttpOnly;`, });
+  return "login success"
 })

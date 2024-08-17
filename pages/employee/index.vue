@@ -4,7 +4,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Register | SMOORE ePortal',
+  title: 'Employee | SMOORE ePortal',
   meta: [
     {
       name: 'viewport',
@@ -12,7 +12,7 @@ useHead({
     },
     {
       name: 'description',
-      content: 'ePortal register employee page'
+      content: 'ePortal employee home page'
     },
     {
       name: 'author',
@@ -31,14 +31,12 @@ useHead({
     }
   ]
 });
-
-
 </script>
 
 <template>
-  <div>
-    <h1>Import Employee</h1>
-  </div>
+<div>
+  <h1>Employee</h1>
+</div>
 </template>
 
 <style scoped>

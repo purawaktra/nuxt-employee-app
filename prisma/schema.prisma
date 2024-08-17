@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  password     String
+  is_active    Boolean       @default(false)
+  trx_issuer   TrxEmployee[] @relation("issuer")
+  trx_approval TrxEmployee[] @relation("approval")
+}
+
+model Employee {
+  id                String    @id
+  name              String?
+  category          String?
+  department_level1 String?
+  department_level2 String?
+  department_level3 String?
+  position          String?
+  level             String?
+  join_date         DateTime?
+  created_at        DateTime? @default(now())
+  updated_at        DateTime? @updatedAt
+}
+
+model TrxStatus {
+  id       String        @id
+  name     String
+  employee TrxEmployee[]
+}
+
+model LogEmployee {
+  id                String        @id
+  name              String?
+  category          String?
+  department_level1 String?
+  department_level2 String?
+  department_level3 String?
+  position          String?
+  level             String?
+  join_date         DateTime?
+  created_at        DateTime?     @default(now())
+  trx               TrxEmployee[]
+}
+
+model TrxEmployee {
+  id          Int          @id @default(autoincrement())
+  Employee    LogEmployee? @relation(fields: [employee_id], references: [id])
+  employee_id String?
+  Issuer      User?        @relation(fields: [issuer_id], references: [id], name: "issuer")
+  issuer_id   Int?
+  Approval    User?        @relation(fields: [approval_id], references: [id], name: "approval")
+  approval_id Int?
+  TrxStatus   TrxStatus?   @relation(fields: [status_id], references: [id])
+  status_id   String?
+  is_active   Boolean?
+  created_at  DateTime?    @default(now())
+  updated_at  DateTime?    @updatedAt
+}
